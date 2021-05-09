@@ -1,0 +1,18 @@
+##: The id of an element is now separated from the rest by a space
+component foo:
+  meta:
+    ##: The kind of an element is now marked with `.`, bringing us more in line with Pug
+    field.number x
+    field.number y: 10
+  p: {{$x}} + {{$y}} == {{script.js: doc.x + doc.y}}
+
+h1: Brainstorming well-known tags:
+markdown#:
+  The markdown tag shall cause the inner text of all visible children (i.e those not inside components)
+  to be interpreted and rendered as standard markdown.
+  
+  Other components:
+  
+  - Obviously, the `h*` series of tags from HTML will stay
+  - `ul`/`ol` and `li`
+  - ``

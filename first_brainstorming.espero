@@ -1,0 +1,163 @@
+p:
+  #:
+      Esperilo is intended to be a framework for replacing the current HTML/CSS/JS setup that balances
+      a desire for a simpler internet (a la Gemini, Gopher, or simply the early internet) with the reality
+      that one of the internet's biggest use cases is for dynamic content that can replace traditional apps.
+
+
+      `.espera` is the extension for the primary layout format. Espero draws *heavy* inspiration from
+      Jade/Pug in syntax.
+      
+      It's not neccesarily intended that this be the final format or even stack that gets used,
+      just that we start to question why we keep using such a complicated, bloated stack that it's impossible
+      to write a competing implementation without a large company behind you.
+
+  :The guiding principals of the Esperilo stack are (in order):
+  ol:
+    li:
+      :  Simplicity
+      ul:
+        li#:
+          It should be possible to for a small but competent team to implement a new, fully functional client 
+          and server for Esperilo in under a year, with a non-scripted client (hopefully) able to come much 
+          sooner than that.
+        li#:
+          This priniciple is also intended to aid screen readers and other accessibility tools. The more explicit
+          the structure and intent of the page, the easier it is to relay it in a non-visual manner.
+    li: 
+      : Privacy
+      ul:
+        li: Esperilo's design should take into account a user's right to privacy.
+        li#:
+          Although this is mentioned after simplicity, it is intended that the requirement of simplicity shall
+          serve to reinforce the requirement for privacy. The simpler the spec is, the less room for error in the
+          implementation, and the easier it can be to audit it for security flaws.
+    li:
+      : Flexibility
+      ul:
+        li#:
+          The spec should be flexibile enough for a given page to be adequately rendered with or without
+          scripts enabled, and the markup itself should be able to denote the intended physical structure
+          of the content without relying on CSS, which frees up users to use their own CSS to change
+          the look of a given page if they so desire.
+        li#:
+          This principle is somewhat sacrificed in favor of the first principle. It is intended that parsers
+          all be *very* strict about what they accept.
+        li#:
+          Even though it is intended that documents be perfectly viewable without scripting, it's also nice to be able
+          to use componetized elements. Thus, Espero 
+  :The Esperilo (Esperonto for "a tool for hope") stack is intended to be composed of:
+  ul:
+    li: HTTP.
+      aside#:
+        This may change in the future, but for now, I have no objections HTTP itself, even if it is
+        a little bloated in places. This naturally extends to HTTP 1, 2, and 3 (over QUIC)
+    li: Espero (Esperonto for "hope"), the standard layout language.
+
+p: Every line is composed of two major parts: an element description, and a body (colon-separated)
+
+##: This is a comment. We'll get into why later.
+
+##: An empty `p` element
+p
+##: Also an empty `p` element
+p:
+p: An element's body either immediately follows it on the same line...
+p:
+  p:...or follows it as an indented block, using the same syntax of "first non-ws character is the element tag"
+  :A naked `:` is used to place more lines within the same element without adding a new tag.
+p:
+  : p: note that the `p:` in this line is actually part of the text, and needs no escaping.
+  : {{p: meanwhile, this `p` is another element. double-braced blocks can be used to embed inline elements}}
+  : {{
+       p: braced blocks can also be multiline. The starting and ending *should* line up.
+    }}
+p#foo: You specify a tag for an element with `#tag` on the element itself.
+p%bar: 
+  :You specify a kind for an element with `%...` on the element itself. `%` was chosen as it is typically
+  :used as a "like" operator
+
+
+
+
+##: Component structure:
+
+##: `meta` takes on the role of HTML's `<head>`
+meta:
+  charset: UTF-8
+  ##: 
+    `data` defines data that can be interpolated into the document later on. The variables defined here will also be
+    exposed to the script.
+    The `data` tag is only valid in 
+  data:
+    field#who: Johnathan Lee
+  script%js#:
+    /*
+      Before, we were actually just taking advantage of a `#:` tag's properties for comments. An element
+      whose element description ends in two `#`s rather than one has no place within the rendered view,
+      and any element whose element description ends in at least one `#` is not parsed at all, although it must
+      still follow the standard rules for "body on one line" or "body in indented block".
+      Thus, we're able to embed another language in here!
+      Note that we specified the script language with the kind (`%`) descriptor. There is, by design, no "default"
+      scripting language.
+    */
+
+##: 
+  Espero tries to replace HTML's reliance on CSS for layout with elements that can
+  unambiguously describe layout.
+
+##: `linear` is either a vbox or an hbox, depending on the `dir` attribute
+linear[dir=hor]:
+  p: We will
+  p: be a bunch of
+  p: paragraphs next to
+  p: each other, horizontally.
+
+##:
+  Espero tries to make componetized pages the official way of building pages, rather than
+  relying on external systems that have to try to put the puzzle together with a hand tied
+  behind their back. This allows browsers to heavily optimize components.
+
+  A component is defined with the `component` tag like so:
+
+component#adder:
+  meta:
+    ##: The `meta` tag is valid inside any component, so we can use it to specify how this component behaves.
+    ##: There may be a more concise syntax specified for parameters in the future.
+    data:
+      ##:
+        The `data` tag is used to specify arguments for the component.
+        The `field` tag is used to specify each individual datum for the component, with the kind specifying the
+        type, as is logical.
+      field%number#x
+      ##: The body can be left empty 
+      field%number#y:10
+  ##: Interpolation of fields is done with `$...` elements. Script interpolation also follows quite simply.
+  ##: Note that we can also interpolate inside the element description.
+  p[foo=$x]: 
+    :{{$x}} + {{$y}} is 
+    ##: Note that `x` and `y` are (intended to be) exposed in js under the `doc` variable.
+    if-script: {{script%js: doc.x + doc.y}}
+    if-no-script: uncalculatable without scripting
+
+##: Components are invoked with `@`, with their parameters specified by name in `()`, much like attributes.
+@adder(x=11, y=50)
+##:
+  The above will expand to either `p: 11 + 50 is 61` or `p: 11 + 50 is uncalculatable without scripting`,
+  depending on whether the user has (js) scripting enabled.
+
+##:
+  It is also intended that if scripting is enabled, then changes to the `doc.*` variables will similarly
+  propogate back to the document, including two-way bindings 
+
+##:
+  It is intended that Espero will also provide field types for arrays/dictionaries and elements like `each`
+  which can be used to iterate over them. Note that this will still be kept relatively simple. More advanced
+  features will have to be implemented in scripts. Espero will simply implement the most common use cases
+  that any framework should have, allowing for more standardized development.
+
+
+##: 
+  As a final note, I shall again state that none of the syntax or semantics in this are final. This is nothing
+  but an initial, *very* rough brainstorming session.
+
